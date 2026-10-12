@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Burnt City
 // @namespace    http://tampermonkey.net/
-// @version      1.9.1
+// @version      1.9.2
 // @downloadURL https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/Burnt-City.user.js
 // @updateURL  https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/Burnt-City.user.js
 // @description  Replace town map and building-list images
@@ -174,6 +174,7 @@ function swap(img, pairs, tag, allowShrink) {
             return;
         }
     }
+}
 
     function capKeepCastle() {
         if (!mapOn) return;
