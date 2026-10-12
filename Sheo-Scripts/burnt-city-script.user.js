@@ -144,21 +144,37 @@
         clearShrink(img);
     }
 
-    function swap(img, pairs, tag, allowShrink) {
-        if (img.dataset.skinned && img.dataset.skinTag === tag) return;
-        const src = img.dataset.originalSrc || img.getAttribute('src') || '';
-        if (!src) return;
-        for (const [needle, url] of pairs) {
-            if (src.includes(needle)) {
-                if (!img.dataset.originalSrc) img.dataset.originalSrc = img.getAttribute('src') || src;
-                img.src = url;
-                img.dataset.skinned = '1';
-                img.dataset.skinTag = tag;
-                if (allowShrink) shrinkBuilding(img, needle);
-                return;
+function sizeBuildGif(img) {
+    const size = 60;
+    const original = 75;
+    const offset = (original - size) / 2;
+
+    img.style.width = size + 'px';
+    img.style.height = size + 'px';
+    img.style.objectFit = 'contain';
+    img.style.marginLeft = (offset - 1) + 'px';
+    img.style.marginTop = (offset - 25) + 'px';
+}
+
+function swap(img, pairs, tag, allowShrink) {
+    if (img.dataset.skinned && img.dataset.skinTag === tag) return;
+    const src = img.dataset.originalSrc || img.getAttribute('src') || '';
+    if (!src) return;
+    for (const [needle, url] of pairs) {
+        if (src.includes(needle)) {
+            if (!img.dataset.originalSrc) img.dataset.originalSrc = img.getAttribute('src') || src;
+            img.src = url;
+            img.dataset.skinned = '1';
+            img.dataset.skinTag = tag;
+            if (needle === 'build.gif') {
+                sizeBuildGif(img);
+            } else if (allowShrink) {
+                shrinkBuilding(img, needle);
             }
+            return;
         }
     }
+}
 
     function capKeepCastle() {
         if (!mapOn) return;
