@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Burnt City
 // @namespace    http://tampermonkey.net/
-// @version      1.9.2
+// @version      2.0
 // @downloadURL https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/Burnt-City.user.js
 // @updateURL  https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/Burnt-City.user.js
 // @description  Replace town map and building-list images
@@ -18,7 +18,7 @@
 
     const BUILDING_SIZE = 50;
     const BUILDING_OFFSET = (75 - BUILDING_SIZE) / 2;
-    const BURNT = 'https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/destroyed%20city/Burnt%20Building.png';
+    const BURNT = 'https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/destroyed%20city/burnt%20building%20gif.gif';
     const CASTLE = 'https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/destroyed%20city/recolored%20broken%20castle.png';
 
     let mapOn = GM_getValue('mapOn', true);
@@ -145,7 +145,7 @@
     }
 
 function sizeBuildGif(img) {
-    const size = 40;
+    const size = 25;
     const original = 75;
     const offset = (original - size) / 2;
 
@@ -153,7 +153,7 @@ function sizeBuildGif(img) {
     img.style.height = size + 'px';
     img.style.objectFit = 'contain';
     img.style.marginLeft = (offset - 1) + 'px';
-    img.style.marginTop = (offset - 20) + 'px';
+    img.style.marginTop = (offset - 15) + 'px';
 }
 
 function swap(img, pairs, tag, allowShrink) {
