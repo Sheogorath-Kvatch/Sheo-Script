@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Burnt City
 // @namespace    http://tampermonkey.net/
-// @version      2.0
+// @version      2.1
 // @downloadURL https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/Burnt-City.user.js
 // @updateURL  https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/Burnt-City.user.js
 // @description  Replace town map and building-list images
@@ -176,6 +176,24 @@ function swap(img, pairs, tag, allowShrink) {
     }
 }
 
+function addCityOverlay() {
+    const map = document.querySelector('#townMap');
+    if (!map || document.getElementById('city-overlay')) return;
+
+    const overlay = document.createElement('img');
+    overlay.id = 'city-overlay';
+    overlay.src = 'https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/Demon%20Invaded/embers2.gif';
+    overlay.style.position = 'absolute';
+    overlay.style.left = '0';
+    overlay.style.top = '0';
+    overlay.style.width = '100%';
+    overlay.style.height = '100%';
+    overlay.style.pointerEvents = 'none';
+    overlay.style.zIndex = '50';
+    overlay.style.objectFit = 'cover';
+    map.appendChild(overlay);
+}
+
     function capKeepCastle() {
         if (!mapOn) return;
         document.querySelectorAll('img').forEach(img => {
@@ -207,6 +225,11 @@ function swap(img, pairs, tag, allowShrink) {
         }
         if (buildingsOn) {
             document.querySelectorAll('img').forEach(img => swap(img, buildingPairs, 'building', true));
+        }
+if (mapOn) {
+        document.querySelectorAll('#townMap img, img').forEach(img => swap(img, mapPairs, 'map', false));
+        capKeepCastle();
+        addCityOverlay();
         }
     }
 
