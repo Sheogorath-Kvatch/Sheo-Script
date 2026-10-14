@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Burnt City VIP
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @downloadURL https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/Burnt-City-VIP.user.js
 // @updateURL  https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/Burnt-City-VIP.user.js
 // @description  Replace town map and building-list images
@@ -20,13 +20,15 @@
     const BUILDING_OFFSET = (75 - BUILDING_SIZE) / 2;
     const BURNT = 'https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/destroyed%20city/burnt%20building%20gif.gif';
     const CASTLE = 'https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/destroyed%20city/recolored%20broken%20castle.png';
+    const BURNT_BACK = 'https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/destroyed%20city/destroyed%20back.jpg';
+    const DEMON_BACK = 'https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/Demon%20Invaded/demon%20back%203.png';
 
-    let mapOn = GM_getValue('mapOn', true);
-    let buildingsOn = GM_getValue('buildingsOn', true);
+    let burntCityOn = GM_getValue('burntCityOn', false);
+    let demonModeOn = GM_getValue('demonModeOn', false);
+    let buildingsOn = GM_getValue('buildingsOn', false);
 
-    // Ground, walls, trees, castle, and plots outside the walls.
     const MAP_ONLY = {
-        'back.jpg':            'https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/Demon%20Invaded/demon%20back%203.png',
+        'back.jpg':            '',
         '03-roads.png':        'https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/destroyed%20city/cracked%20roads.png',
         '03-squarebushes.png': 'https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/destroyed%20city/burnt%20square.png',
         '03-fountain.png':     'https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/destroyed%20city/empty%20fountain.png',
@@ -48,12 +50,10 @@
         '03-farm_6_off.png':     'https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/destroyed%20city/farm6.png',
         '03-farm_7_off.png':     'https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/destroyed%20city/farm%207.png',
         '03-farm_5_c_off.png':   'https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/destroyed%20city/farm%205%20(no%20wall).png',
-        'build.gif':                        'https://usagif.com/wp-content/uploads/gifs/fire-65.gif',
+        'build.gif':             'https://usagif.com/wp-content/uploads/gifs/fire-65.gif'
     };
 
-    // Buildings inside the walls.
     const BUILDINGS = {
-
         '03-barracks_off.png':              BURNT,
         '03-warehouse_off.png':             BURNT,
         '03-flourmill_off.png':             BURNT,
@@ -114,8 +114,18 @@
         '03-vault_off.png':                 BURNT
     };
 
-    const mapPairs = Object.entries(MAP_ONLY).filter(([, url]) => url);
     const buildingPairs = Object.entries(BUILDINGS).filter(([, url]) => url);
+
+    function getMapPairs() {
+        const pairs = { ...MAP_ONLY };
+        // Demon Mode takes priority for the background if both are on
+        if (demonModeOn) {
+            pairs['back.jpg'] = DEMON_BACK;
+        } else if (burntCityOn) {
+            pairs['back.jpg'] = BURNT_BACK;
+        }
+        return Object.entries(pairs).filter(([, url]) => url);
+    }
 
     function shrinkBuilding(img, needle) {
         if (!needle.includes('_off.png')) return;
@@ -144,58 +154,61 @@
         clearShrink(img);
     }
 
-function sizeBuildGif(img) {
-    const size = 25;
-    const original = 75;
-    const offset = (original - size) / 2;
+    function sizeBuildGif(img) {
+        const size = 25;
+        const original = 75;
+        const offset = (original - size) / 2;
+        img.style.width = size + 'px';
+        img.style.height = size + 'px';
+        img.style.objectFit = 'contain';
+        img.style.marginLeft = (offset - 1) + 'px';
+        img.style.marginTop = (offset - 15) + 'px';
+    }
 
-    img.style.width = size + 'px';
-    img.style.height = size + 'px';
-    img.style.objectFit = 'contain';
-    img.style.marginLeft = (offset - 1) + 'px';
-    img.style.marginTop = (offset - 15) + 'px';
-}
-
-function swap(img, pairs, tag, allowShrink) {
-    if (img.dataset.skinned && img.dataset.skinTag === tag) return;
-    const src = img.dataset.originalSrc || img.getAttribute('src') || '';
-    if (!src) return;
-    for (const [needle, url] of pairs) {
-        if (src.includes(needle)) {
-            if (!img.dataset.originalSrc) img.dataset.originalSrc = img.getAttribute('src') || src;
-            img.src = url;
-            img.dataset.skinned = '1';
-            img.dataset.skinTag = tag;
-            if (needle === 'build.gif') {
-                sizeBuildGif(img);
-            } else if (allowShrink) {
-                shrinkBuilding(img, needle);
+    function swap(img, pairs, tag, allowShrink) {
+        if (img.dataset.skinned && img.dataset.skinTag === tag) return;
+        const src = img.dataset.originalSrc || img.getAttribute('src') || '';
+        if (!src) return;
+        for (const [needle, url] of pairs) {
+            if (src.includes(needle)) {
+                if (!img.dataset.originalSrc) img.dataset.originalSrc = img.getAttribute('src') || src;
+                img.src = url;
+                img.dataset.skinned = '1';
+                img.dataset.skinTag = tag;
+                if (needle === 'build.gif') {
+                    sizeBuildGif(img);
+                } else if (allowShrink) {
+                    shrinkBuilding(img, needle);
+                }
+                return;
             }
-            return;
         }
     }
-}
 
     function addCityOverlay() {
-    const map = document.querySelector('#townMap');
-    if (!map || document.getElementById('city-overlay')) return;
+        const map = document.querySelector('#townMap');
+        if (!map || document.getElementById('city-overlay')) return;
+        const overlay = document.createElement('img');
+        overlay.id = 'city-overlay';
+        overlay.src = 'https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/Demon%20Invaded/embers2.gif';
+        overlay.style.position = 'absolute';
+        overlay.style.left = '0';
+        overlay.style.top = '0';
+        overlay.style.width = '100%';
+        overlay.style.height = '100%';
+        overlay.style.pointerEvents = 'none';
+        overlay.style.zIndex = '50';
+        overlay.style.objectFit = 'cover';
+        map.appendChild(overlay);
+    }
 
-    const overlay = document.createElement('img');
-    overlay.id = 'city-overlay';
-    overlay.src = 'https://raw.githubusercontent.com/Sheogorath-Kvatch/Sheo-Script/refs/heads/main/Demon%20Invaded/embers2.gif';
-    overlay.style.position = 'absolute';
-    overlay.style.left = '0';
-    overlay.style.top = '0';
-    overlay.style.width = '100%';
-    overlay.style.height = '100%';
-    overlay.style.pointerEvents = 'none';
-    overlay.style.zIndex = '50';
-    overlay.style.objectFit = 'cover';
-    map.appendChild(overlay);
-}
+    function removeCityOverlay() {
+        const existing = document.getElementById('city-overlay');
+        if (existing) existing.remove();
+    }
 
     function capKeepCastle() {
-        if (!mapOn) return;
+        if (!burntCityOn && !demonModeOn) return;
         document.querySelectorAll('img').forEach(img => {
             if (img.closest('#townMap')) return;
             const src = img.dataset.originalSrc || img.getAttribute('src') || img.src || '';
@@ -215,28 +228,34 @@ function swap(img, pairs, tag, allowShrink) {
     }
 
     function apply() {
+        const mapActive = burntCityOn || demonModeOn;
         document.querySelectorAll('img').forEach(img => {
-            if (!mapOn && img.dataset.skinTag === 'map') restore(img, 'map');
+            if (!mapActive && img.dataset.skinTag === 'map') restore(img, 'map');
             if (!buildingsOn && img.dataset.skinTag === 'building') restore(img, 'building');
         });
-        if (mapOn) {
+        if (!mapActive) removeCityOverlay();
+
+        if (mapActive) {
+            const mapPairs = getMapPairs();
             document.querySelectorAll('#townMap img, img').forEach(img => swap(img, mapPairs, 'map', false));
             capKeepCastle();
+            addCityOverlay();
         }
         if (buildingsOn) {
             document.querySelectorAll('img').forEach(img => swap(img, buildingPairs, 'building', true));
         }
-        if (mapOn) {
-        document.querySelectorAll('#townMap img, img').forEach(img => swap(img, mapPairs, 'map', false));
-        capKeepCastle();
-        addCityOverlay();
-        }
     }
 
     function registerMenus() {
-        GM_registerMenuCommand((mapOn ? 'City skin: ON' : 'City skin: OFF') + ' — click to toggle', () => {
-            mapOn = !mapOn;
-            GM_setValue('mapOn', mapOn);
+        GM_registerMenuCommand((burntCityOn ? 'Burnt City: ON' : 'Burnt City: OFF') + ' — click to toggle', () => {
+            burntCityOn = !burntCityOn;
+            GM_setValue('burntCityOn', burntCityOn);
+            apply();
+            location.reload();
+        });
+        GM_registerMenuCommand((demonModeOn ? 'Demon Mode: ON' : 'Demon Mode: OFF') + ' — click to toggle', () => {
+            demonModeOn = !demonModeOn;
+            GM_setValue('demonModeOn', demonModeOn);
             apply();
             location.reload();
         });
@@ -251,5 +270,5 @@ function swap(img, pairs, tag, allowShrink) {
     registerMenus();
     apply();
     new MutationObserver(apply).observe(document.body, { childList: true, subtree: true });
-    console.log('Illyriad town skin loaded. Map:', mapOn, 'Buildings:', buildingsOn);
+    console.log('Illyriad town skin loaded. Burnt City:', burntCityOn, 'Demon Mode:', demonModeOn, 'Buildings:', buildingsOn);
 })();
